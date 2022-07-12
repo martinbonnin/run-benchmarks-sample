@@ -1,0 +1,36 @@
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  push:
+    branches:
+      - '*'
+
+
+jobs:
+  benchmarks:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+      - uses: gradle/gradle-build-action@v2.1.4
+      - run: |
+          # Build the apks
+          ./gradlew :microbenchmark:packageReleaseAndroidTest :app:assembleRelease
+      - name: microbenchmarks
+        uses: martinbonnin/run-benchmarks@main
+        with:
+          google_services_json: ${{ secrets.GOOGLE_SERVICES_JSON }}
+
+          app_apk: 'app/build/outputs/apk/release/app-release.apk'
+          test_apk: 'microbenchmark/build/outputs/apk/androidTest/release/microbenchmark-release-androidTest.apk'
+          device_model: 'redfin,locale=en,orientation=portrait'
+
+          # Optional, for Datadog upload
+          dd_api_key: ${{ secrets.DD_API_KEY }}
+          dd_metric_prefix: 'android.benchmark'
+
+          # Optional, to create a dashboard issue that publishes the latest results
+          github_token: ${{ github.token }}
