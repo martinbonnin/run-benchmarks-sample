@@ -1,3 +1,4 @@
+name: Run Benchmarks
 on:
   schedule:
     - cron: '0 3 * * *'
